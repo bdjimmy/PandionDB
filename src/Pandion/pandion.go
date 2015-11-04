@@ -10,7 +10,7 @@ import (
 	"log"
 )
 
-
+const DB_PRE string = "./DB/"
 const MAX_KEY_LEN int = 200
 const RECORD_LEN int64 = 232
 
@@ -49,14 +49,14 @@ func NewPandionKV(name string,logger *log.Logger)(*PandionKV){
 	this:=&PandionKV{MaxKeyOffset:0,Logger:logger,Name:name,indexMmap:nil,detailMmap:nil,IndexInfo:make(map[string]NodeInfo,0)}
 	
 	var err error
-	idx_file_name:=fmt.Sprintf("./%v.idx",this.Name)
+	idx_file_name:=fmt.Sprintf("%v/%v.idx",DB_PRE,this.Name)
 	this.indexMmap,err=NewMmap(idx_file_name,MODE_CREATE)
 	if err!=nil{
 		return nil
 	}
 	this.indexMmap.AppendInt64(0)
 	this.indexMmap.SetFileEnd(8)
-	dtl_file_name:=fmt.Sprintf("./%v.dtl",this.Name)
+	dtl_file_name:=fmt.Sprintf("%v/%v.dtl",DB_PRE,this.Name)
 	this.detailMmap,err=NewMmap(dtl_file_name,MODE_CREATE)
 	if err!=nil{
 		return nil
@@ -85,7 +85,7 @@ func (this *PandionKV)loadLocalFiles()error{
 	
 	
 	var err error
-	idx_file_name := fmt.Sprintf("./%v.idx", this.Name)
+	idx_file_name:=fmt.Sprintf("%v/%v.idx",DB_PRE,this.Name)
 	this.indexMmap, err = NewMmap(idx_file_name, MODE_APPEND)
 	if err != nil {
 		fmt.Printf("mmap error : %v \n", err)
@@ -93,7 +93,7 @@ func (this *PandionKV)loadLocalFiles()error{
 	}
 	
 	
-	dtl_file_name := fmt.Sprintf("./%v.dtl", this.Name)
+	dtl_file_name:=fmt.Sprintf("%v/%v.dtl",DB_PRE,this.Name)
 	this.detailMmap, err = NewMmap(dtl_file_name, MODE_APPEND)
 	if err != nil {
 		fmt.Printf("mmap error : %v \n", err)
@@ -195,7 +195,7 @@ func (this *PandionKV)addToDisk(key string) error {
 	
 	v,_:=this.IndexInfo[key]
 	this.indexMmap.WriteInt64(0,this.MaxKeyOffset)
-	fmt.Printf("MAx : %v \n",this.MaxKeyOffset)
+	fmt.Printf("Max : %v \n",this.MaxKeyOffset)
 	start:=v.KeyOffset
 	
 	str_bytes := make([]byte, MAX_KEY_LEN)

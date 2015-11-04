@@ -1,0 +1,16 @@
+*.o
+*.swp
+*github.com*
+*bin/*
+*pkg/*
+*DB/*
+*.log*
+*.json*
+*.dat*
+*.sql*
+.DS_Store
+*.pyc
+*.dic
+*.mdl
+nohup.out
+*.a

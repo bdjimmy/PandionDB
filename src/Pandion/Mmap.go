@@ -69,6 +69,34 @@ func (this *Mmap) SetFileEnd(file_len int64) {
 	this.FilePointer = file_len
 }
 
+
+
+
+func (this *Mmap) checkOverFlow(start,check_value int64) error {
+
+	if start+check_value >= this.FileLen {
+		err := syscall.Ftruncate(int(this.FileFd.Fd()), this.FileLen+APPEND_DATA)
+		if err != nil {
+			fmt.Printf("ftruncate error : %v\n", err)
+			return err
+		}
+		this.FileLen += APPEND_DATA
+		syscall.Munmap(this.MmapBytes)
+		this.MmapBytes, err = syscall.Mmap(int(this.FileFd.Fd()), 0, int(this.FileLen), syscall.PROT_READ|syscall.PROT_WRITE, syscall.MAP_SHARED)
+
+		if err != nil {
+			fmt.Printf("MAPPING ERROR  %v \n", err)
+			return err
+		}
+
+	}
+
+	return nil
+}
+
+
+
+
 func (this *Mmap) checkFilePointer(check_value int64) error {
 
 	if this.FilePointer+check_value >= this.FileLen {
@@ -158,6 +186,9 @@ func (this *Mmap) WriteInt64(start, value int64) error {
 		}
 	*/
 	//if this.isEndOfFile(start)==false{
+	if err := this.checkOverFlow(start,8); err != nil {
+		return err
+	}
 	binary.LittleEndian.PutUint64(this.MmapBytes[start:start+8], uint64(value))
 	//}else{
 	//	this.AppendInt64(value)
@@ -212,6 +243,9 @@ func (this *Mmap) AppendBytes(value []byte) error {
 
 func (this *Mmap) WriteBytes(start int64, value []byte) error {
 	lens := int64(len(value))
+	if err := this.checkOverFlow(start,lens); err != nil {
+		return err
+	}
 	dst := this.MmapBytes[start : start+lens]
 	copy(dst, value)
 	return nil //this.Sync()
