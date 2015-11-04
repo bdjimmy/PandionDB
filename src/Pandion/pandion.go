@@ -131,7 +131,7 @@ func (this *PandionKV)loadLocalFiles()error{
 
 
 
-func (this *PandionKV)GetFromDisk(offset,lens int64) (string,error){
+func (this *PandionKV)getFromDisk(offset,lens int64) (string,error){
 	
 	return this.detailMmap.ReadString(offset,lens),nil
 	
@@ -146,15 +146,28 @@ func (this *PandionKV)Set(key,value string) error{
 		return errors.New("Key is too long")
 	}
 	var maxkeyoffset int64 = this.MaxKeyOffset*RECORD_LEN + 8
-	_,ok:=this.IndexInfo[key]
+	v,ok:=this.IndexInfo[key]
 	if !ok {
 		//新建一个节点
 		this.IndexInfo[key]=NodeInfo{KeyOffset:maxkeyoffset,ValueOffset:this.detailMmap.GetPointer(),ValueLens:int64(len(value)),Value:value}
 		this.MaxKeyOffset++
-		this.addToDisk(key)
+		this.addToDisk(key,true)
+		return nil
+		
+	}else{
+		//修改一个节点
+		v.Value=value
+		if v.ValueLens != int64(len(value)){
+			v.ValueOffset=this.detailMmap.GetPointer()
+			v.ValueLens=int64(len(value))
+			this.IndexInfo[key]=v
+			this.addToDisk(key,true)
+		}else{
+			this.IndexInfo[key]=v
+			this.addToDisk(key,false)
+		}
 		
 	}
-	
 	
 	return nil
 }
@@ -173,7 +186,7 @@ func (this *PandionKV)Get(key string) (string,error){
 	if v.Value !=""{	
 		return v.Value,nil
 	}else{
-		return this.GetFromDisk(v.ValueOffset,v.ValueLens)
+		return this.getFromDisk(v.ValueOffset,v.ValueLens)
 	}
 }
 
@@ -191,7 +204,7 @@ dtl ..
 
 */
 
-func (this *PandionKV)addToDisk(key string) error {
+func (this *PandionKV)addToDisk(key string,isappend bool) error {
 	
 	v,_:=this.IndexInfo[key]
 	this.indexMmap.WriteInt64(0,this.MaxKeyOffset)
@@ -205,7 +218,12 @@ func (this *PandionKV)addToDisk(key string) error {
 	this.indexMmap.WriteInt64(start+int64(MAX_KEY_LEN)+8,v.ValueOffset)
 	this.indexMmap.WriteInt64(start+int64(MAX_KEY_LEN)+16,v.ValueLens)
 	this.indexMmap.WriteInt64(start+int64(MAX_KEY_LEN)+24,int64(len(key)))
-	this.detailMmap.AppendString(v.Value)
+	//this.detailMmap.WriteString(v.ValueOffset,v.Value)
+	if isappend{
+		this.detailMmap.AppendString(v.Value)
+	}else{
+		this.detailMmap.WriteString(v.ValueOffset,v.Value)
+	}
 	
 	return nil
 	

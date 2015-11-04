@@ -251,6 +251,17 @@ func (this *Mmap) WriteBytes(start int64, value []byte) error {
 	return nil //this.Sync()
 }
 
+
+
+
+
+func (this *Mmap) WriteString(start int64,value string) error {
+	
+	return this.WriteBytes(start,[]byte(value))
+}
+
+
+
 func (this *Mmap) Unmap() error {
 
 	syscall.Munmap(this.MmapBytes)

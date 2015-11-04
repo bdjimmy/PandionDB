@@ -1,9 +1,9 @@
 *.o
 *.swp
 *github.com*
-*bin/*
-*pkg/*
-*DB/*
+*bin/
+*pkg/
+*DB/
 *.log*
 *.json*
 *.dat*
@@ -14,3 +14,4 @@
 *.mdl
 nohup.out
 *.a
+
