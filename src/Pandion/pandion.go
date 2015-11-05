@@ -183,11 +183,16 @@ func (this *PandionKV)Get(key string) (string,error){
 		return "",errors.New("Key is not found")
 	}
 	
-	if v.Value !=""{	
-		return v.Value,nil
-	}else{
-		return this.getFromDisk(v.ValueOffset,v.ValueLens)
+	if v.Value ==""{	
+		value,err :=this.getFromDisk(v.ValueOffset,v.ValueLens)
+		if err!=nil{
+			return "",err
+		}
+		v.Value=value
+		this.IndexInfo[key]=v
 	}
+	
+	return v.Value,nil
 }
 
 
